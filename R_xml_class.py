@@ -73,7 +73,7 @@ class RetrieveXML:
         logger.info("DONE")
 
     @staticmethod
-    def download(tarfile_url):
+    def download(tarfile_url, thread_name):
         logger = logging.getLogger("RetrieveXML.download")
         logger.info("Downloading article tar.gz file and extract nxml file.")
 
@@ -89,19 +89,21 @@ class RetrieveXML:
         tmpfile.seek(0)
 
         thetarfile = tarfile.open(fileobj=tmpfile, mode="r:gz")
-        RetrieveXML.get_nxmlfile(thetarfile)
+        RetrieveXML.get_nxmlfile(thetarfile, thread_name)
 
         thetarfile.close()
         tmpfile.close()
 
     @staticmethod
-    def get_nxmlfile(tar_object):
+    def get_nxmlfile(tar_object, thread_name):
         logger = logging.getLogger("RetrieveXML.get_nxmlfile")
         logger.info("Extracting nxml file.")
         for filename in tar_object.getnames():
             if ".nxml" in filename:
-                #print(filename)
-                saveFile = open("output/"+str(pmid)+".nxml", "w")
+                print(filename)
+                print(thread_name + " now working on "+ filename)
+                """
+                saveFile = open("output/"+str(filename), "w")
                 f = tar_object.extractfile(filename)
                 xml_file = f.read()
                 xml_file = xml_file.decode('ascii')
@@ -112,7 +114,7 @@ class RetrieveXML:
                 #print(xml_file)
                 #parse_xml_file(xml_file)
                 #print(os.listdir("output"))
-
+                """
 #create worker threads
 def create_workers():
     for _ in range(THREADS):
@@ -126,7 +128,7 @@ def work():
         url = queue.get()
         if url is None:
             break
-        RetrieveXML.download(url)
+        RetrieveXML.download(url, threading.current_thread().name)
         queue.task_done()
 
 
