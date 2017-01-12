@@ -27,18 +27,21 @@ from io import BytesIO
 import pymysql
 import re
 import logging
+import threading
+from queue import Queue
+from general import *
 from lxml import etree
 
 
 class RetrieveXML:
 
     base = "ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/"
-    oa_index_file = "input/oa_file_list.csv"
+    oa_index_file = "input/oa_file_list2.csv"
 
     #####logger#####
     logger = logging.getLogger("RetrieveXML")
     logger.setLevel(logging.INFO)
-    fh = logging.FileHandler("Retrieve_XML.log")
+    fh = logging.FileHandler("Retrieve_XML_class.log")
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     fh.setFormatter(formatter)
     logger.addHandler(fh)
@@ -47,8 +50,10 @@ class RetrieveXML:
     ################
 
     @staticmethod
-    def open_XML(self):
+    def open_XML():
         logger = logging.getLogger("RetrieveXML.open_XML")
+        pmid_url= {}
+
         with open(RetrieveXML.oa_index_file, 'rt') as csvfile:
             csv_file = csv.reader(csvfile, delimiter=',')
             header = csv_file.__next__()
@@ -58,16 +63,17 @@ class RetrieveXML:
                 url = row[0]
                 pmid = row[4]
                 full_url = str(RetrieveXML.base + url)
+                pmid_url[pmid] = full_url
                 logger.info(full_url)
                 logger.info(pmid)
 
                 ftpstream = full_url
-                RetrieveXML.download(ftpstream, pmid)
-
+                #RetrieveXML.download(ftpstream, pmid)
+        return pmid_url
         logger.info("DONE")
 
     @staticmethod
-    def download(tarfile_url, pmid):
+    def download(tarfile_url):
         logger = logging.getLogger("RetrieveXML.download")
         logger.info("Downloading article tar.gz file and extract nxml file.")
 
@@ -83,19 +89,19 @@ class RetrieveXML:
         tmpfile.seek(0)
 
         thetarfile = tarfile.open(fileobj=tmpfile, mode="r:gz")
-        RetrieveXML.get_nxmlfile(thetarfile, pmid)
+        RetrieveXML.get_nxmlfile(thetarfile)
 
         thetarfile.close()
         tmpfile.close()
 
     @staticmethod
-    def get_nxmlfile(tar_object, pmid):
+    def get_nxmlfile(tar_object):
         logger = logging.getLogger("RetrieveXML.get_nxmlfile")
         logger.info("Extracting nxml file.")
         for filename in tar_object.getnames():
             if ".nxml" in filename:
                 #print(filename)
-                saveFile = open("output/"+str(pmid)+".nxml","w")
+                saveFile = open("output/"+str(pmid)+".nxml", "w")
                 f = tar_object.extractfile(filename)
                 xml_file = f.read()
                 xml_file = xml_file.decode('ascii')
@@ -106,5 +112,38 @@ class RetrieveXML:
                 #print(xml_file)
                 #parse_xml_file(xml_file)
                 #print(os.listdir("output"))
+
+#create worker threads
+def create_workers():
+    for _ in range(THREADS):
+        t = threading.Thread(target=work)
+        t.daemon = True
+        t.start()
+
+
+def work():
+    while True:
+        url = queue.get()
+        if url is None:
+            break
+        RetrieveXML.download(url)
+        queue.task_done()
+
+
+#each link is a job
+def create_jobs():
+    for k, v in pmid_urls_dict.items():
+        queue.put(v)
+    queue.join()
+
+
+print("start")
+THREADS = 8
+queue = Queue
 R = RetrieveXML()
-R.open_XML()
+pmid_urls_dict = R.open_XML()
+print(pmid_urls_dict)
+create_jobs(pmid_urls_dict)
+create_workers()
+create_jobs()
+print("done")
