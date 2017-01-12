@@ -101,7 +101,8 @@ class RetrieveXML:
         for filename in tar_object.getnames():
             if ".nxml" in filename:
                 print(filename)
-                print(thread_name + " now working on "+ filename)
+                print(thread_name + " now working on " + filename)
+                logger.info(thread_name + " now working on " + filename)
                 """
                 saveFile = open("output/"+str(filename), "w")
                 f = tar_object.extractfile(filename)
