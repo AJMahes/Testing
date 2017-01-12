@@ -142,11 +142,10 @@ def create_jobs():
 
 print("start")
 THREADS = 8
-queue = Queue
+queue = Queue()
 R = RetrieveXML()
 pmid_urls_dict = R.open_XML()
 print(pmid_urls_dict)
-create_jobs(pmid_urls_dict)
 create_workers()
 create_jobs()
 print("done")
