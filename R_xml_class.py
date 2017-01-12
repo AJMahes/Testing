@@ -29,10 +29,6 @@ import re
 import logging
 from lxml import etree
 
-def main():
-
-
-
 
 class RetrieveXML:
 
