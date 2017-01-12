@@ -67,10 +67,9 @@ class RetrieveXML:
                 logger.info(full_url)
                 logger.info(pmid)
 
-                ftpstream = full_url
-                #RetrieveXML.download(ftpstream, pmid)
+        logger.info("Number of urls to process: " + str(len(pmid_url)))
         return pmid_url
-        logger.info("DONE")
+
 
     @staticmethod
     def download(tarfile_url, thread_name):
@@ -85,7 +84,6 @@ class RetrieveXML:
                 break
             tmpfile.write(s)
         ftpstream.close()
-
         tmpfile.seek(0)
 
         thetarfile = tarfile.open(fileobj=tmpfile, mode="r:gz")
@@ -98,10 +96,9 @@ class RetrieveXML:
     def get_nxmlfile(tar_object, thread_name):
         logger = logging.getLogger("RetrieveXML.get_nxmlfile")
         logger.info("Extracting nxml file.")
+
         for filename in tar_object.getnames():
             if ".nxml" in filename:
-                print(filename)
-                print(thread_name + " now working on " + filename)
                 logger.info(thread_name + " now working on " + filename)
                 """
                 saveFile = open("output/"+str(filename), "w")
@@ -116,7 +113,8 @@ class RetrieveXML:
                 #parse_xml_file(xml_file)
                 #print(os.listdir("output"))
                 """
-#create worker threads
+
+
 def create_workers():
     for _ in range(THREADS):
         t = threading.Thread(target=work)
@@ -133,7 +131,6 @@ def work():
         queue.task_done()
 
 
-#each link is a job
 def create_jobs():
     for k, v in pmid_urls_dict.items():
         queue.put(v)
@@ -145,7 +142,6 @@ THREADS = 8
 queue = Queue()
 R = RetrieveXML()
 pmid_urls_dict = R.open_XML()
-print(pmid_urls_dict)
 create_workers()
 create_jobs()
 print("done")
